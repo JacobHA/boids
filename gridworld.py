@@ -291,3 +291,207 @@ def coordinate_features(world):
         features[s, y] += 1
 
     return features
+
+def cardinal_to_int_action(cardinal: str, n_actions: int):
+    """
+    Convert a cardinal direction to an integer action.
+
+    Args:
+        cardinal: The cardinal direction as string.
+        n_actions: The number of actions of the world (4 or 8).
+
+    Returns:
+        The integer representing the action.
+    """
+    if n_actions == 4:
+        if cardinal == "E":
+            return 0 # (1, 0)
+        elif cardinal == "W":
+            return 1 # (-1, 0)
+        elif cardinal == "N":
+            return 2 # (0, 1)
+        elif cardinal == "S":
+            return 3 # (0, -1)
+    elif n_actions == 8:
+        if cardinal == "E":
+            return 0 # (1, 0)
+        elif cardinal == "W":
+            return 1 # (-1, 0)
+        elif cardinal == "N":
+            return 2 # (0, 1)
+        elif cardinal == "S":
+            return 3 # (0, -1)
+        elif cardinal == "NE":
+            return 4 # (1, 1)
+        elif cardinal == "NW":
+            return 5 # (-1, 1)
+        elif cardinal == "SE":
+            return 6 # (1, -1)
+        elif cardinal == "SW":
+            return 7 # (-1, -1)
+    else:
+        raise ValueError("n_actions must be 4 or 8.")
+    
+
+class BirdWorld:
+    """
+    Basic deterministic grid world MDP for birds.
+
+
+    Args:
+        width: The width of the world as integer.
+        height: The height of the world as integer.
+        n_actions: The number of actions of this MDP (4 or 8) for cardinal directions.
+
+    Attributes:
+        n_states: The number of states of this MDP.
+        n_actions: The number of actions of this MDP.
+        p_transition: The transition probabilities as table. The entry
+            `p_transition[from, to, a]` contains the probability of
+            transitioning from state `from` to state `to` via action `a`.
+        size: The width and height of the world.
+        actions: The actions of this world as paris, indicating the
+            direction in terms of coordinates.
+    """
+
+    def __init__(self, width=9, height=8, n_actions=8):
+        self.width = width
+        self.height = height
+
+        if n_actions == 8:
+            # E, W, N, S, NE, NW, SE, SW
+            self.actions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, 1), (1, -1), (-1, -1)]
+        
+        elif n_actions == 4:
+            # E, W, N, S
+            self.actions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        else:
+            raise ValueError("n_actions must be 4 or 8.")
+
+        self.n_states = width * height
+        self.n_actions = n_actions
+
+        self.p_transition = self._transition_prob_table()
+
+    def state_index_to_point(self, state):
+        """
+        Convert a state index to the coordinate representing it.
+
+        Args:
+            state: Integer representing the state.
+
+        Returns:
+            The coordinate as tuple of integers representing the same state
+            as the index.
+        """
+        return state % self.size, state // self.size
+
+    def state_point_to_index(self, state):
+        """
+        Convert a state coordinate to the index representing it.
+
+        Note:
+            Does not check if coordinates lie outside of the world.
+
+        Args:
+            state: Tuple of integers representing the state.
+
+        Returns:
+            The index as integer representing the same state as the given
+            coordinate.
+        """
+        return state[1] * self.size + state[0]
+
+    def state_point_to_index_clipped(self, state):
+        """
+        Convert a state coordinate to the index representing it, while also
+        handling coordinates that would lie outside of this world.
+
+        Coordinates that are outside of the world will be clipped to the
+        world, i.e. projected onto to the nearest coordinate that lies
+        inside this world.
+
+        Useful for handling transitions that could go over an edge.
+
+        Args:
+            state: The tuple of integers representing the state.
+
+        Returns:
+            The index as integer representing the same state as the given
+            coordinate if the coordinate lies inside this world, or the
+            index to the closest state that lies inside the world.
+        """
+        s = (max(0, min(self.size - 1, state[0])), max(0, min(self.size - 1, state[1])))
+        return self.state_point_to_index(s)
+
+    def state_index_transition(self, s, a):
+        """
+        Perform action `a` at state `s` and return the intended next state.
+
+        Does not take into account the transition probabilities. Instead it
+        just returns the intended outcome of the given action taken at the
+        given state, i.e. the outcome in case the action succeeds.
+
+        Args:
+            s: The state at which the action should be taken.
+            a: The action that should be taken.
+
+        Returns:
+            The next state as implied by the given action and state.
+        """
+        s = self.state_index_to_point(s)
+        s = s[0] + self.actions[a][0], s[1] + self.actions[a][1]
+        return self.state_point_to_index_clipped(s)
+
+    def _transition_prob_table(self):
+        """
+        Builds the internal probability transition table.
+
+        Returns:
+            The probability transition table of the form
+
+                [state_from, state_to, action]
+
+            containing all transition probabilities. The individual
+            transition probabilities are defined by `self._transition_prob'.
+        """
+        table = np.zeros(shape=(self.n_states, self.n_states, self.n_actions))
+
+        s1, s2, a = range(self.n_states), range(self.n_states), range(self.n_actions)
+        for s_from, s_to, a in product(s1, s2, a):
+            table[s_from, s_to, a] = self._transition_prob(s_from, s_to, a)
+
+        return table
+
+    def _transition_prob(self, s_from, s_to, a):
+        """
+        Compute the transition probability for a single transition.
+
+        Args:
+            s_from: The state in which the transition originates.
+            s_to: The target-state of the transition.
+            a: The action via which the target state should be reached.
+
+        Returns:
+            The transition probability from `s_from` to `s_to` when taking
+            action `a`.
+        """
+        fx, fy = self.state_index_to_point(s_from)
+        tx, ty = self.state_index_to_point(s_to)
+        ax, ay = self.actions[a]
+
+        # deterministic transition defined by action
+        if fx + ax == tx and fy + ay == ty:
+            return 1.0
+
+        # we can stay at the same state if we would move over an edge
+        if fx == tx and fy == ty:
+            if not 0 <= fx + ax < self.size or not 0 <= fy + ay < self.size:
+                return 1.0
+
+        # otherwise this transition is impossible
+        return 0.0
+
+    def __repr__(self):
+        return f"BirdWorld(w={self.width},h={self.height})"
+
