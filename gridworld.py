@@ -292,7 +292,7 @@ def coordinate_features(world):
 
     return features
 
-def cardinal_to_int_action(cardinal: str, n_actions: int):
+def cardinal_to_int_action(cardinal: str, n_actions: int = 8):
     """
     Convert a cardinal direction to an integer action.
 
@@ -384,7 +384,8 @@ class BirdWorld:
             The coordinate as tuple of integers representing the same state
             as the index.
         """
-        return state % self.size, state // self.size
+        # return state % self.size, state // self.size
+        return state % self.width, state // self.width
 
     def state_point_to_index(self, state):
         """
@@ -400,7 +401,7 @@ class BirdWorld:
             The index as integer representing the same state as the given
             coordinate.
         """
-        return state[1] * self.size + state[0]
+        return state[1] * self.width + state[0]
 
     def state_point_to_index_clipped(self, state):
         """
@@ -421,7 +422,7 @@ class BirdWorld:
             coordinate if the coordinate lies inside this world, or the
             index to the closest state that lies inside the world.
         """
-        s = (max(0, min(self.size - 1, state[0])), max(0, min(self.size - 1, state[1])))
+        s = (max(0, min(self.width - 1, state[0])), max(0, min(self.height - 1, state[1])))
         return self.state_point_to_index(s)
 
     def state_index_transition(self, s, a):
@@ -486,7 +487,7 @@ class BirdWorld:
 
         # we can stay at the same state if we would move over an edge
         if fx == tx and fy == ty:
-            if not 0 <= fx + ax < self.size or not 0 <= fy + ay < self.size:
+            if not 0 <= fx + ax < self.width or not 0 <= fy + ay < self.height:
                 return 1.0
 
         # otherwise this transition is impossible

@@ -87,12 +87,16 @@ def plot_state_values(ax, world, values, border, **kwargs):
         All further key-value arguments will be forwarded to
         `pyplot.imshow`.
     """
-    p = ax.imshow(np.reshape(values, (world.size, world.size)), origin='lower', **kwargs)
+    p = ax.imshow(np.reshape(values, (world.width, world.height)), origin='lower', **kwargs)
 
     if border is not None:
-        for i in range(0, world.size + 1):
-            ax.plot([i - 0.5, i - 0.5], [-0.5, world.size - 0.5], **border, label=None)
-            ax.plot([-0.5, world.size - 0.5], [i - 0.5, i - 0.5], **border, label=None)
+        # for i in range(0, world.size + 1):
+        #     ax.plot([i - 0.5, i - 0.5], [-0.5, world.size - 0.5], **border, label=None)
+        #     ax.plot([-0.5, world.size - 0.5], [i - 0.5, i - 0.5], **border, label=None)
+        for i in range(0, world.width+1):
+            ax.plot([-0.5, world.height - 0.5], [i - 0.5, i - 0.5], **border, label=None)
+        for i in range(0, world.height+1):
+            ax.plot([i - 0.5, i - 0.5], [-0.5, world.width - 0.5], **border, label=None)
 
     return p
 
