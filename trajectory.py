@@ -20,6 +20,9 @@ class Trajectory:
     def __init__(self, transitions):
         self._t = transitions
 
+    def __len__(self):
+        return len(self._t)
+
     def transitions(self):
         """
         The transitions of this trajectory.

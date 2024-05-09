@@ -51,6 +51,14 @@ class GridWorld:
 
         self.p_transition = self._transition_prob_table()
 
+    @property
+    def width(self):
+        return self.size
+    
+    @property
+    def height(self):
+        return self.size
+
     def state_index_to_point(self, state):
         """
         Convert a state index to the coordinate representing it.
