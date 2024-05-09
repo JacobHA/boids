@@ -7,11 +7,16 @@ def load_data(file_name):
     return data
 
 # Reorganize the data to "Trajectory" style with (s,a,s') tuples:
-def reorganize_data(data, pair=1):
+def reorganize_data(data, pair=None, generation=None, releases=None):
     action_lookup = pd.read_csv('action_lookup.csv')
     # Consider each "Release" column as a separate trajectory:
-    data = data[data['Pair'] == pair]
-    releases = data['Release'].unique()
+    if generation is not None:
+        data = data[data['Gen'] == generation]
+    if pair is not None:
+        data = data[data['Pair'] == pair]
+    if releases is None:
+        releases = data['Release'].unique()
+
     trajectories = []
     for release_n, release in enumerate(releases):
         transitions = []
@@ -32,11 +37,22 @@ def reorganize_data(data, pair=1):
             # Append the tuple to the transitions list:
             transitions.append((s, a_int, s_prime))
         # Add the final state:
-        trajectories.append(Trajectory(transitions))
+        if len(traj_data) > 0:
+            # transitions.append((traj_data['State'].iloc[-1], 0, 0))
+            trajectories.append(Trajectory(transitions))
 
     return trajectories
 
-if __name__ == "__main__":
+def get_all_trajectories():
     data = load_data('action_space.csv')
-    trajectory = reorganize_data(data)
-    print(trajectory)
+    trajs = []
+    for pair in range(1,39):
+        try:
+            trajectory = reorganize_data(data, pair=pair, generation=5, releases=list(range(9,13)))
+            # Check if the trajectory is not empty:
+            if len(trajectory) > 0:
+                trajs += trajectory
+        except:
+            pass
+    
+    return trajs
