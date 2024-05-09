@@ -1,6 +1,6 @@
 import pandas as pd
 from trajectory import Trajectory
-
+from gridworld import cardinal_to_int_action
 
 def load_data(file_name):
     data = pd.read_csv(file_name)
@@ -21,6 +21,7 @@ def reorganize_data(data, pair=1):
             # Get the current state, action and next state:
             s = traj_data['State'][i]
             a = traj_data['Action'][i]
+            a = cardinal_to_int_action(a)
             s_prime = traj_data['State'][i+1]
             # Append the tuple to the transitions list:
             transitions.append((s, a, s_prime))
