@@ -43,12 +43,12 @@ def reorganize_data(data, pair=None, generation=None, releases=None):
 
     return trajectories
 
-def get_all_trajectories():
+def get_all_trajectories(generation=5):
     data = load_data('action_space.csv')
     trajs = []
     for pair in range(1,39):
         try:
-            trajectory = reorganize_data(data, pair=pair, generation=5, releases=list(range(9,13)))
+            trajectory = reorganize_data(data, pair=pair, generation=generation, releases=list(range(9,13)))
             # Check if the trajectory is not empty:
             if len(trajectory) > 0:
                 trajs += trajectory
